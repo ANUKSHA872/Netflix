@@ -1,4 +1,5 @@
-const API = '/api';
+// Same origin on Vercel (backend at /api). Use VITE_API_URL only for external backend (e.g. Render).
+const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 
 const getToken = () => localStorage.getItem('token');
 

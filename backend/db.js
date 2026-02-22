@@ -3,15 +3,26 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, 'data');
+const isVercel = !!process.env.VERCEL;
 
 const id = () => Date.now().toString(36) + Math.random().toString(36).slice(2);
 
+// In-memory storage for Vercel (serverless filesystem is read-only)
+let _users = [];
+let _movies = [];
+
+const DATA_DIR = isVercel ? null : path.join(__dirname, 'data');
+
 function ensureDataDir() {
-  if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+  if (!isVercel && DATA_DIR && !fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
 }
 
 function read(file) {
+  if (isVercel) {
+    return file === 'users.json' ? _users : _movies;
+  }
   ensureDataDir();
   const p = path.join(DATA_DIR, file);
   if (!fs.existsSync(p)) return file === 'users.json' ? [] : [];
@@ -19,6 +30,11 @@ function read(file) {
 }
 
 function write(file, data) {
+  if (isVercel) {
+    if (file === 'users.json') _users = data;
+    else _movies = data;
+    return;
+  }
   ensureDataDir();
   fs.writeFileSync(path.join(DATA_DIR, file), JSON.stringify(data, null, 2));
 }
