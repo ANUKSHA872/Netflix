@@ -1,34 +1,31 @@
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import User from './models/User.js';
-import Movie from './models/Movie.js';
+import bcrypt from 'bcryptjs';
+import { db } from './db.js';
 import { sampleMovies } from './seedData.js';
 
 dotenv.config();
 
 async function seed() {
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/streamnest');
-  
-  const adminExists = await User.findOne({ isAdmin: true });
+  const adminExists = db.users.getAll().some(u => u.isAdmin);
   if (!adminExists) {
-    await User.create({
+    const hashed = await bcrypt.hash('admin123', 10);
+    db.users.create({
       name: 'Admin',
       email: 'admin@streamnest.com',
-      password: 'admin123',
+      password: hashed,
       isAdmin: true,
     });
     console.log('Admin created: admin@streamnest.com / admin123');
   }
 
-  const count = await Movie.countDocuments();
-  if (count === 0) {
-    await Movie.insertMany(sampleMovies);
+  const movies = db.movies.getAll();
+  if (movies.length === 0) {
+    db.movies.insertMany(sampleMovies);
     console.log('Sample movies added (with YouTube trailers)');
   } else {
     console.log('Movies already exist. Delete movies in Admin to re-seed.');
   }
 
-  await mongoose.disconnect();
   console.log('Seed complete');
 }
 

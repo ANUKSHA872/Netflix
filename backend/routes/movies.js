@@ -1,14 +1,34 @@
 import express from 'express';
-import Movie from '../models/Movie.js';
 import { sampleMovies } from '../seedData.js';
+import { db } from '../db.js';
 import { protect, adminOnly } from '../middleware/auth.js';
 
 const router = express.Router();
 
+function filterMovies(movies, { category, language, search }) {
+  let list = [...movies];
+  if (category) list = list.filter(m => m.category === category);
+  if (language) {
+    if (language === 'english') {
+      list = list.filter(m => !m.language || m.language === 'english');
+    } else {
+      list = list.filter(m => m.language === language);
+    }
+  }
+  if (search && typeof search === 'string' && search.trim()) {
+    const s = search.trim().toLowerCase();
+    list = list.filter(m =>
+      (m.title || '').toLowerCase().includes(s) ||
+      (m.description || '').toLowerCase().includes(s)
+    );
+  }
+  return list;
+}
+
 router.post('/seed', protect, adminOnly, async (req, res) => {
   try {
-    await Movie.deleteMany({});
-    await Movie.insertMany(sampleMovies);
+    db.movies.deleteAll();
+    db.movies.insertMany(sampleMovies);
     res.json({ message: `Seeded ${sampleMovies.length} movies` });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -17,19 +37,9 @@ router.post('/seed', protect, adminOnly, async (req, res) => {
 
 router.get('/', async (req, res) => {
   try {
-    const { category, search, language } = req.query;
-    let query = {};
-    if (category) query.category = category;
-    if (language) query.language = language;
-    if (search && typeof search === 'string' && search.trim()) {
-      const escaped = search.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      query.$or = [
-        { title: { $regex: escaped, $options: 'i' } },
-        { description: { $regex: escaped, $options: 'i' } }
-      ];
-    }
-    const movies = await Movie.find(query).sort({ createdAt: -1 });
-    res.json(movies);
+    const movies = db.movies.getAll();
+    const filtered = filterMovies(movies, req.query);
+    res.json(filtered.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -37,16 +47,17 @@ router.get('/', async (req, res) => {
 
 router.get('/categories', async (req, res) => {
   try {
+    const movies = db.movies.getAll();
     const categories = ['trending', 'popular', 'dramas', 'action', 'comedy'];
     const result = {};
     for (const cat of categories) {
-      result[cat] = await Movie.find({ category: cat }).limit(12);
+      result[cat] = movies.filter(m => m.category === cat).slice(0, 12);
     }
-    result.recently = await Movie.find().sort({ createdAt: -1 }).limit(12);
+    result.recently = [...movies].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 12);
     result.languages = {
-      english: await Movie.find({ $or: [{ language: 'english' }, { language: { $exists: false } }] }).limit(12),
-      hindi: await Movie.find({ language: 'hindi' }).limit(12),
-      kannada: await Movie.find({ language: 'kannada' }).limit(12),
+      english: movies.filter(m => !m.language || m.language === 'english').slice(0, 12),
+      hindi: movies.filter(m => m.language === 'hindi').slice(0, 12),
+      kannada: movies.filter(m => m.language === 'kannada').slice(0, 12),
     };
     res.json(result);
   } catch (err) {
@@ -56,7 +67,7 @@ router.get('/categories', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const movie = await Movie.findById(req.params.id);
+    const movie = db.movies.getById(req.params.id);
     if (!movie) return res.status(404).json({ message: 'Movie not found' });
     res.json(movie);
   } catch (err) {
@@ -70,7 +81,7 @@ router.post('/', protect, adminOnly, async (req, res) => {
     if (!title || !imageUrl || !videoUrl || !category) {
       return res.status(400).json({ message: 'Title, imageUrl, videoUrl and category required' });
     }
-    const movie = await Movie.create({
+    const movie = db.movies.create({
       title,
       description: description || '',
       imageUrl,
@@ -88,7 +99,7 @@ router.post('/', protect, adminOnly, async (req, res) => {
 
 router.put('/:id', protect, adminOnly, async (req, res) => {
   try {
-    const movie = await Movie.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const movie = db.movies.update(req.params.id, req.body);
     if (!movie) return res.status(404).json({ message: 'Movie not found' });
     res.json(movie);
   } catch (err) {
@@ -98,8 +109,9 @@ router.put('/:id', protect, adminOnly, async (req, res) => {
 
 router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
-    const movie = await Movie.findByIdAndDelete(req.params.id);
-    if (!movie) return res.status(404).json({ message: 'Movie not found' });
+    const existed = db.movies.getById(req.params.id);
+    if (!existed) return res.status(404).json({ message: 'Movie not found' });
+    db.movies.delete(req.params.id);
     res.json({ message: 'Movie deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

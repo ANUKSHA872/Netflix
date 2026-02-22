@@ -3,8 +3,8 @@ dist/
 .env
 *.log
 .DS_Store
-
-
-
-
-
+*.zip
+_zip_temp/
+.env.local
+.cursor/
+*.cache

@@ -3,12 +3,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 
 import authRoutes from './routes/auth.js';
 import movieRoutes from './routes/movies.js';
 import userRoutes from './routes/users.js';
-import Movie from './models/Movie.js';
+import { db } from './db.js';
 import { sampleMovies } from './seedData.js';
 
 dotenv.config();
@@ -23,27 +22,17 @@ const isProduction = process.env.NODE_ENV === 'production';
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-async function ensureMovies() {
-  const count = await Movie.countDocuments();
+function ensureMovies() {
+  const movies = db.movies.getAll();
   const expectedCount = sampleMovies.length;
-  if (count === 0 || count < expectedCount) {
-    await Movie.deleteMany({});
-    await Movie.insertMany(sampleMovies);
+  if (movies.length === 0 || movies.length < expectedCount) {
+    db.movies.deleteAll();
+    db.movies.insertMany(sampleMovies);
     console.log(`Catalog updated: ${sampleMovies.length} movies (English, Hindi, Kannada)`);
   }
 }
 
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/streamnest', {
-  serverSelectionTimeoutMS: 5000,
-})
-  .then(() => {
-    console.log('MongoDB connected');
-    return ensureMovies();
-  })
-  .catch(err => {
-    console.error('MongoDB connection error:', err.message);
-    console.error('Make sure MongoDB is running or check your Atlas connection string.');
-  });
+ensureMovies();
 
 app.use('/api/auth', authRoutes);
 app.use('/api/movies', movieRoutes);
