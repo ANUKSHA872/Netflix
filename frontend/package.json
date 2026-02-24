@@ -1,11 +1,11 @@
 {
   "name": "streamnest-frontend",
-  "homepage": "https://anuksha872.github.io/netflix",
+  "homepage": "https://anuksha872.github.io/Netflix",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build:gh": "vite build --base /netflix",
+    "build:gh": "vite build --base /Netflix/",
     "predeploy": "npm run build:gh",
     "deploy": "npm run build:gh && gh-pages -d ../dist",
     "dev": "vite",

@@ -6,5 +6,21 @@
     "isAdmin": true,
     "id": "mlxhg4mnw4z6z5n68pc",
     "myList": []
+  },
+  {
+    "name": "aj poojary",
+    "email": "ajay@gmail.com",
+    "password": "$2a$10$2d969STElCAg2PtoykgIr.kamntp0i8Wm.wOIdA1oL2G0AN1K6Hhu",
+    "isAdmin": false,
+    "id": "mlxm38nllqmbmuhlxo",
+    "myList": []
+  },
+  {
+    "name": "Anuksha acharya",
+    "email": "anukshaacharya7@gmail.com",
+    "password": "$2a$10$hNdciEykcQNn4B45jWHpHOLddijkKOAvglDKpn0x2j2Qmg3M2EdLa",
+    "isAdmin": false,
+    "id": "mlxmoabobbd5jwk38a9",
+    "myList": []
   }
 ]

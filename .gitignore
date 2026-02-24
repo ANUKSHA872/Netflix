@@ -6,5 +6,6 @@ dist/
 *.zip
 _zip_temp/
 .env.local
+.env.gh
 .cursor/
 *.cache

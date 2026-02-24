@@ -1,34 +1,44 @@
-# Deploy StreamNest (Single Deployment)
+# Deploy Guide
 
-Your project is configured to deploy **frontend + backend together** as one app.
+## GitHub Pages (with API)
 
-## Quick Deploy on Render
+GitHub Pages serves only static files. To make login/signup work, connect to the Vercel API.
 
-1. **Push to GitHub** – Commit and push your code.
+### Step 1: Deploy to Vercel (get API URL)
 
-2. **Create Web Service** – Go to [render.com](https://render.com) → New → Web Service.
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) → Import your repo
+3. Deploy (use default settings, Root Directory: empty)
+4. Copy your Vercel URL (e.g. `https://netflix-xxx.vercel.app`)
 
-3. **Connect repo** – Link your GitHub repository.
+### Step 2: Deploy to GitHub Pages with API
 
-4. **Configure:**
-   - **Root Directory:** (leave empty – use project root)
-   - **Build Command:** `npm run install:all && npm run build`
-   - **Start Command:** `npm run start`
+**Option A – Use config file**
 
-5. **Environment Variables** (Settings → Environment):
-   - `MONGODB_URI` – Your MongoDB Atlas connection string
-   - `JWT_SECRET` – A strong secret (e.g. `openssl rand -hex 32`)
-   - `NODE_ENV` – `production` (Render sets this automatically)
+```powershell
+cd d:\Netflix\frontend
+copy .env.gh.example .env.gh
+# Edit .env.gh and set: VITE_API_URL=https://your-vercel-app.vercel.app
 
-6. **Deploy** – Click Deploy.
+cd d:\Netflix
+npm run deploy:api
+```
 
-## How It Works
+**Option B – Use environment variable**
 
-- **Build:** Installs frontend + backend deps, builds React to `frontend/dist`
-- **Start:** Runs Express server on port 5000
-- **Production:** Express serves API at `/api/*` and static files from `frontend/dist` at `/`
+```powershell
+cd d:\Netflix
+$env:VITE_API_URL="https://your-vercel-app.vercel.app"
+npm run deploy:api
+```
 
-## Other Platforms
+Replace `your-vercel-app` with your actual Vercel project URL.
 
-- **Railway:** Same build/start commands. Add env vars in Railway dashboard.
-- **Vercel:** Use a custom server or deploy backend separately. Single deployment is simpler on Render/Railway.
+### Step 3: Configure GitHub Pages
+
+1. GitHub repo → **Settings** → **Pages**
+2. Source: **Deploy from a branch**
+3. Branch: **gh-pages**, Folder: **/ (root)**
+4. Save
+
+Your site: **https://anuksha872.github.io/Netflix/**
