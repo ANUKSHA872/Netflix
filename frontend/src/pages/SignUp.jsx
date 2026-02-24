@@ -31,7 +31,7 @@ export default function SignUp() {
       login(data);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError('Something went wrong');
+      setError(err?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }

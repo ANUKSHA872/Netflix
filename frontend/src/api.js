@@ -3,20 +3,32 @@ const API = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '') + '/api';
 
 const getToken = () => localStorage.getItem('token');
 
+async function authFetch(url, options) {
+  const r = await fetch(url, options);
+  let data;
+  try {
+    data = await r.json();
+  } catch {
+    throw new Error(r.ok ? 'Invalid response' : `API error (${r.status})`);
+  }
+  if (!r.ok) throw new Error(data.message || `API error (${r.status})`);
+  return data;
+}
+
 export const authAPI = {
   login: (email, password) =>
-    fetch(`${API}/auth/login`, {
+    authFetch(`${API}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
-    }).then(r => r.json()),
+    }),
 
   register: (name, email, password) =>
-    fetch(`${API}/auth/register`, {
+    authFetch(`${API}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, email, password }),
-    }).then(r => r.json()),
+    }),
 };
 
 export const moviesAPI = {
